@@ -130,17 +130,20 @@ FEATURES = AUDIO_FEATURES + [
 def extract_artists(row):
     return row["artists"]["name"]
 
+# %%
+def get_df_from_playlist(playlist_uri: str) -> pd.DataFrame:
+    tracks = get_tracks_from_playlist(playlist_uri)
+    track_uris = map(extract_uri_from_track, tracks)
+    tracks_features = map(track_extract_features, track_uris)
+
+    df = pd.json_normalize(tracks_features)
+    df = df[FEATURES]
+    df["artists"] = df.apply(
+        lambda row: [artist["name"] for artist in row["artists"]], axis=1
+    )
+    df = df.explode("artists")
+
+    return df
 
 # %%
-liked_tracks = get_tracks_from_playlist(playlist_uris[0])
-liked_track_uris = map(extract_uri_from_track, liked_tracks)
-liked_tracks_features = map(track_extract_features, liked_track_uris)
-
-# %%
-df_liked_tracks = pd.json_normalize(liked_tracks_features)
-df_liked_tracks = df_liked_tracks[FEATURES]
-df_liked_tracks["artists"] = df_liked_tracks.apply(
-    lambda row: [artist["name"] for artist in row["artists"]], axis=1
-)
-df_liked_tracks = df_liked_tracks.explode("artists")
-# %%
+df_liked_tracks = get_df_from_playlist(playlist_uris[0])
